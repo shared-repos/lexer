@@ -32,25 +32,25 @@ namespace System.Text
 {
     public class Lexer : IEnumerable<Token>, IEnumerator<Token>
     {
-        private readonly LexerSettings settings;
-        private LexerBehavior behavior;
-        private TextReader reader;
-        private string text;
-        private int position;
-        private int start;
-        private int textLen;
-        private int textPos;
-        private int textBeg;
-        private int bufBeg;
-        private int maxSymLen;
-        private int lineBegin;
-        private int lineNumber;
-        private int endLineBegin;
-        private int endLineNumber;
-        private StringBuilder buffer;
-        private StringBuilder tokenBuffer;
-        private Token current;
-        private Token next;
+        private readonly LexerSettings _settings;
+        private LexerBehavior _behavior;
+        private TextReader _reader;
+        private string _text;
+        private int _position;
+        private int _start;
+        private int _textLen;
+        private int _textPos;
+        private int _textBeg;
+        private int _bufBeg;
+        private int _maxSymLen;
+        private int _lineBegin;
+        private int _lineNumber;
+        private int _endLineBegin;
+        private int _endLineNumber;
+        private StringBuilder _buffer;
+        private StringBuilder _tokenBuffer;
+        private Token _current;
+        private Token _next;
 
         private Lexer(string text, TextReader reader, LexerBehavior behavior, LexerSettings settings)
         {
@@ -63,19 +63,19 @@ namespace System.Text
                 settings = settings.Clone();
             }
 
-            this.text = text;
-            this.reader = reader;
-            this.behavior = behavior;
-            this.settings = settings;
+            _text = text;
+            _reader = reader;
+            _behavior = behavior;
+            _settings = settings;
 
             if (settings.Symbols != null)
             {
                 foreach (KeyValuePair<string, int> entry in settings.Symbols)
                 {
                     int len = entry.Key.Length;
-                    if (len > maxSymLen)
+                    if (len > _maxSymLen)
                     {
-                        maxSymLen = len;
+                        _maxSymLen = len;
                     }
                 }
             }
@@ -131,7 +131,7 @@ namespace System.Text
         {
             get
             {
-                return current;
+                return _current;
             }
         }
 
@@ -139,115 +139,115 @@ namespace System.Text
         {
             get
             {
-                return text == null;
+                return _text == null;
             }
         }
 
         public void Reset()
         {
-            int readerPos = position - textPos;
-            current = new Token(TokenType.Start, null, null, 0, 0, 0, 0, 0, 0, 0);
-            next = null;
-            textPos = 0;
-            position = 0;
-            textBeg = 0;
-            tokenBuffer = null;
-            buffer = null;
-            bufBeg = -1;
+            int readerPos = _position - _textPos;
+            _current = new Token(TokenType.Start, null, null, CommonLexem.Start, 0, 0, 0, 0, 0, 0);
+            _next = null;
+            _textPos = 0;
+            _position = 0;
+            _textBeg = 0;
+            _tokenBuffer = null;
+            _buffer = null;
+            _bufBeg = -1;
 
-            if (reader != null)
+            if (_reader != null)
             {
-                if (text != null && readerPos > 0)
+                if (_text != null && readerPos > 0)
                 {
-                    StreamReader streamReader = reader as StreamReader;
+                    StreamReader streamReader = _reader as StreamReader;
                     if (streamReader != null && streamReader.BaseStream.CanSeek)
                     {
                         streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
-                        text = null;
+                        _text = null;
                     }
                 }
 
-                if (text == null)
+                if (_text == null)
                 {
-                    textLen = 0;
+                    _textLen = 0;
                     ReadCharBuffer();
                 }
             }
             else
             {
-                textLen = (text == null ? 0 : text.Length);
+                _textLen = (_text == null ? 0 : _text.Length);
             }
         }
 
         public Token GetNextToken(LexerBehavior behavior)
         {
-            LexerBehavior saveBehavior = this.behavior;
-            this.behavior = behavior;
+            LexerBehavior saveBehavior = _behavior;
+            _behavior = behavior;
             try
             {
                 return GetNextToken();
             }
             finally
             {
-                this.behavior = saveBehavior;
+                _behavior = saveBehavior;
             }
         }
 
         public Token GetNextToken()
         {
-            if (next != null)
+            if (_next != null)
             {
-                current = next;
-                next = null;
+                _current = _next;
+                _next = null;
             }
             else
             {
-                current = GetToken();
+                _current = GetToken();
             }
 
-            return current;
+            return _current;
         }
 
         public Token PeekNextToken(LexerBehavior behavior)
         {
-            LexerBehavior saveBehavior = this.behavior;
-            this.behavior = behavior;
+            LexerBehavior saveBehavior = _behavior;
+            _behavior = behavior;
             try
             {
                 return PeekNextToken();
             }
             finally
             {
-                this.behavior = saveBehavior;
+                _behavior = saveBehavior;
             }
         }
 
         public Token PeekNextToken()
         {
-            if (next == null)
+            if (_next == null)
             {
-                next = GetToken();
+                _next = GetToken();
             }
 
-            return next;
+            return _next;
         }
 
         #region Private Implementation
 
         private Token GetToken()
         {
-            if (text == null)
+            if (_text == null)
             {
-                return new Token(TokenType.End, "", "", 0, 0, 0, 0, 0, 0, 0);
+                return new Token(TokenType.End, "", "", CommonLexem.End, 0, 0, 0, 0, 0, 0);
             }
 
-            lineBegin = endLineBegin;
-            lineNumber = endLineNumber;
-            start = position;
-            textBeg = textPos;
-            bufBeg = -1;
-            tokenBuffer = null;
-            buffer = null;
+            _lineBegin = _endLineBegin;
+            _lineNumber = _endLineNumber;
+            _start = _position;
+            _textBeg = _textPos;
+            _bufBeg = -1;
+            _tokenBuffer = null;
+            _buffer = null;
 
             char currentChar = PeekChar();
             bool skip;
@@ -263,24 +263,24 @@ namespace System.Text
                 // separator
                 if (currentChar <= ' ')
                 {
-                    bool skipWhiteSpaces = (behavior & LexerBehavior.SkipWhiteSpaces) != 0;
+                    bool skipWhiteSpaces = (_behavior & LexerBehavior.SkipWhiteSpaces) != 0;
                     do
                     {
                         ReadNext();
                         if (skipWhiteSpaces)
                         {
-                            textBeg = textPos;
+                            _textBeg = _textPos;
                         }
 
                         if (EndOfLine(currentChar))
                         {
                             if (skipWhiteSpaces)
                             {
-                                textBeg = textPos;
+                                _textBeg = _textPos;
                             }
-                            else if ((settings.Options & LexerOptions.EndOfLineAsToken) != 0)
+                            else if ((_settings.Options & LexerOptions.EndOfLineAsToken) != 0)
                             {
-                                return new Token(TokenType.EndOfLine, "", GetTokenText(), 0, start, position, lineBegin, lineNumber, endLineBegin, endLineNumber);
+                                return new Token(TokenType.EndOfLine, "", GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _endLineBegin, _endLineNumber);
                             }
                         }
 
@@ -294,16 +294,16 @@ namespace System.Text
 
                     if (!skipWhiteSpaces)
                     {
-                        return new Token(TokenType.WhiteSpace, "", GetTokenText(), 0, start, position, lineBegin, lineNumber, endLineBegin, endLineNumber);
+                        return new Token(TokenType.WhiteSpace, "", GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _endLineBegin, _endLineNumber);
                     }
 
-                    textBeg = textPos;
+                    _textBeg = _textPos;
                     skip = true;
-                    start = position;
+                    _start = _position;
                 }
 
                 // inline comment
-                string[] inlineComments = settings.InlineComments;
+                string[] inlineComments = _settings.InlineComments;
                 if (inlineComments != null)
                 {
                     for (int inlineCommentIndex = 0; inlineCommentIndex < inlineComments.Length; inlineCommentIndex++)
@@ -311,11 +311,11 @@ namespace System.Text
                         string inlineComment = inlineComments[inlineCommentIndex];
                         if (NextSymbolIs(inlineComment))
                         {
-                            bool skipComments = ((behavior & LexerBehavior.SkipComments) != 0);
+                            bool skipComments = ((_behavior & LexerBehavior.SkipComments) != 0);
                             skip = true;
                             if (skipComments)
                             {
-                                textBeg = textPos;
+                                _textBeg = _textPos;
                             }
 
                             currentChar = PeekChar();
@@ -334,17 +334,17 @@ namespace System.Text
 
                                 if (skipComments)
                                 {
-                                    textBeg = textPos;
+                                    _textBeg = _textPos;
                                 }
                             }
 
                             if (skipComments)
                             {
-                                start = position;
+                                _start = _position;
                             }
                             else
                             {
-                                return new Token(TokenType.Comment, "", GetTokenText(), 0, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+                                return new Token(TokenType.Comment, "", GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
                             }
 
                             break;
@@ -353,23 +353,23 @@ namespace System.Text
                 }
 
                 // comment
-                if (!string.IsNullOrEmpty(settings.CommentBegin) && NextSymbolIs(settings.CommentBegin))
+                if (!string.IsNullOrEmpty(_settings.CommentBegin) && NextSymbolIs(_settings.CommentBegin))
                 {
-                    bool skipComments = ((behavior & LexerBehavior.SkipComments) != 0);
+                    bool skipComments = ((_behavior & LexerBehavior.SkipComments) != 0);
                     skip = true;
                     if (skipComments)
                     {
-                        textBeg = textPos;
+                        _textBeg = _textPos;
                     }
 
                     while (true)
                     {
-                        if (NextSymbolIs(settings.CommentEnd))
+                        if (NextSymbolIs(_settings.CommentEnd))
                         {
                             currentChar = PeekChar();
                             if (skipComments)
                             {
-                                textBeg = textPos;
+                                _textBeg = _textPos;
                             }
 
                             break;
@@ -387,33 +387,33 @@ namespace System.Text
 
                         if (skipComments)
                         {
-                            textBeg = textPos;
+                            _textBeg = _textPos;
                         }
                     }
 
                     if (skipComments)
                     {
-                        start = position;
+                        _start = _position;
                     }
                     else
                     {
-                        return new Token(TokenType.Comment, "", GetTokenText(), 0, start, position, lineBegin, lineNumber, endLineBegin, endLineNumber);
+                        return new Token(TokenType.Comment, "", GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _endLineBegin, _endLineNumber);
                     }
                 }
 
-                lineNumber = endLineNumber;
-                lineBegin = endLineBegin;
+                _lineNumber = _endLineNumber;
+                _lineBegin = _endLineBegin;
 
             } while (skip);
 
             // quoted string
-            char[] stringQuotes = settings.StringQuotes;
+            char[] stringQuotes = _settings.StringQuotes;
             if (stringQuotes != null)
             {
                 for (int i = 0; i < stringQuotes.Length; i++)
                 {
                     char stringQuoteChar = stringQuotes[i];
-                    if (currentChar == stringQuoteChar || i == 0 && currentChar == settings.StringPrefix && PeekChar(1) == stringQuoteChar)
+                    if (currentChar == stringQuoteChar || i == 0 && currentChar == _settings.StringPrefix && PeekChar(1) == stringQuoteChar)
                     {
                         return GetQuotedStringToken(currentChar != stringQuoteChar, stringQuoteChar);
                     }
@@ -421,16 +421,16 @@ namespace System.Text
             }
 
             // quoted identifier
-            bool isIdentQuote = currentChar == settings.IdentQuote;
-            bool quote = isIdentQuote || currentChar == settings.IdentQuoteBegin;
+            bool isIdentQuote = currentChar == _settings.IdentQuote;
+            bool quote = isIdentQuote || currentChar == _settings.IdentQuoteBegin;
             char nextChar;
-            if (quote || currentChar == settings.IdentPrefix && (isIdentQuote = (nextChar = PeekChar(1)) == settings.IdentQuote || nextChar == settings.IdentQuoteBegin))
+            if (quote || currentChar == _settings.IdentPrefix && (isIdentQuote = (nextChar = PeekChar(1)) == _settings.IdentQuote || nextChar == _settings.IdentQuoteBegin))
             {
                 return GetQuotedIdentifierToken(!quote, isIdentQuote);
             }
 
             // prefix identifier
-            if (currentChar == settings.IdentPrefix)
+            if (currentChar == _settings.IdentPrefix)
             {
                 return GetPrefixedIdentifierToken();
             }
@@ -448,35 +448,35 @@ namespace System.Text
             }
 
             // predefined symbol
-            if (settings.Symbols != null)
+            if (_settings.Symbols != null)
             {
-                string symbol = PeekSubstring(maxSymLen);
+                string symbol = PeekSubstring(_maxSymLen);
                 for (int i = symbol.Length; i > 0; i--, symbol = symbol.Substring(0, i))
                 {
                     int symbolId;
-                    if (settings.Symbols.TryGetValue(symbol, out symbolId))
+                    if (_settings.Symbols.TryGetValue(symbol, out symbolId))
                     {
                         Skip(i);
-                        string symbolText = (behavior & LexerBehavior.PersistTokenText) != 0 ? symbol : null;
-                        return new Token(TokenType.Symbol, symbol, symbolText, (int)symbolId, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+                        string symbolText = (_behavior & LexerBehavior.PersistTokenText) != 0 ? symbol : null;
+                        return new Token(TokenType.Symbol, symbol, symbolText, (int)symbolId, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
                     }
                 }
             }
 
             // just a char
             currentChar = NextChar();
-            string charText = (behavior & LexerBehavior.PersistTokenText) != 0 ? currentChar.ToString() : null;
-            return new Token(TokenType.Char, currentChar, charText, 0, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+            string charText = (_behavior & LexerBehavior.PersistTokenText) != 0 ? currentChar.ToString() : null;
+            return new Token(TokenType.Char, currentChar, charText, 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
         }
 
         private Token GetEndToken()
         {
-            if (reader != null)
+            if (_reader != null)
             {
-                reader.Close();
+                _reader.Close();
             }
 
-            return new Token(TokenType.End, "", "", 0, start, start, lineBegin, lineNumber, lineBegin, lineNumber);
+            return new Token(TokenType.End, "", "", CommonLexem.End, _start, _start, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
         }
 
         private Token GetQuotedIdentifierToken(bool prefix, bool isIdentQuote)
@@ -490,17 +490,17 @@ namespace System.Text
             bool doubleQuote;
             if (isIdentQuote)
             {
-                quoteEnd = settings.IdentQuote;
-                doubleQuote = (settings.Options & LexerOptions.IdentDoubleQuote) != 0;
+                quoteEnd = _settings.IdentQuote;
+                doubleQuote = (_settings.Options & LexerOptions.IdentDoubleQuote) != 0;
             }
             else
             {
-                quoteEnd = settings.IdentQuoteEnd;
+                quoteEnd = _settings.IdentQuoteEnd;
                 doubleQuote = false;
             }
 
             ReadNext();
-            bufBeg = textPos;
+            _bufBeg = _textPos;
 
             while (true)
             {
@@ -532,7 +532,7 @@ namespace System.Text
             }
 
             string val = GetBufferValue(-1);
-            return new Token(TokenType.Identifier, val, GetTokenText(), 0, start, position, lineBegin, lineNumber, endLineBegin, endLineNumber);
+            return new Token(TokenType.Identifier, val, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _endLineBegin, _endLineNumber);
         }
 
         private Token GetQuotedStringToken(bool prefix, char stringQuoteChar)
@@ -549,13 +549,13 @@ namespace System.Text
             }
             else
             {
-                escapeChar = settings.StringEscapeChar;
-                escaping = (settings.Options & LexerOptions.StringEscaping) != 0;
-                doubleQuote = (settings.Options & LexerOptions.StringDoubleQuote) != 0;
+                escapeChar = _settings.StringEscapeChar;
+                escaping = (_settings.Options & LexerOptions.StringEscaping) != 0;
+                doubleQuote = (_settings.Options & LexerOptions.StringDoubleQuote) != 0;
             }
 
             ReadNext();
-            bufBeg = textPos;
+            _bufBeg = _textPos;
 
             while (true)
             {
@@ -592,12 +592,12 @@ namespace System.Text
             }
 
             string val = GetBufferValue(-1);
-            return new Token(TokenType.QuotedString, val, GetTokenText(), 0, start, position, lineBegin, lineNumber, endLineBegin, endLineNumber);
+            return new Token(TokenType.QuotedString, val, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _endLineBegin, _endLineNumber);
         }
 
         private Token GetKeywordOrIdentifierToken(char currentChar)
         {
-            bufBeg = textPos;
+            _bufBeg = _textPos;
             do
             {
                 ReadNext();
@@ -609,33 +609,33 @@ namespace System.Text
 
             int id = 0;
             TokenType tokenType = TokenType.Identifier;
-            if ((settings.Options & LexerOptions.IdentToUpper) != 0)
+            if ((_settings.Options & LexerOptions.IdentToUpper) != 0)
             {
-                val = val.ToUpper(settings.CultureInfo);
-                if (settings.Keywords != null && settings.Keywords.TryGetValue(val, out id))
+                val = val.ToUpper(_settings.CultureInfo);
+                if (_settings.Keywords != null && _settings.Keywords.TryGetValue(val, out id))
                 {
                     tokenType = TokenType.Keyword;
                 }
             }
             else
             {
-                if (settings.Keywords != null && settings.Keywords.TryGetValue(val.ToUpper(settings.CultureInfo), out id))
+                if (_settings.Keywords != null && _settings.Keywords.TryGetValue(val.ToUpper(_settings.CultureInfo), out id))
                 {
                     tokenType = TokenType.Keyword;
                 }
 
-                if ((settings.Options & LexerOptions.IdentToLower) != 0)
+                if ((_settings.Options & LexerOptions.IdentToLower) != 0)
                 {
                     val = val.ToLower();
                 }
             }
 
-            return new Token(tokenType, val, GetTokenText(), (int)id, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+            return new Token(tokenType, val, GetTokenText(), (int)id, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
         }
 
         private Token GetNumberToken(char currentChar)
         {
-            bufBeg = textPos;
+            _bufBeg = _textPos;
             do
             {
                 ReadNext();
@@ -644,7 +644,7 @@ namespace System.Text
             }
             while (currentChar >= '0' && currentChar <= '9');
 
-            string decimalSeparator = settings.DecimalSeparator;
+            string decimalSeparator = _settings.DecimalSeparator;
             if (SymbolIs(decimalSeparator))
             {
                 int ln = decimalSeparator.Length;
@@ -674,19 +674,24 @@ namespace System.Text
                 } while ((currentChar >= '0' && currentChar <= '9') || currentChar == '-' || currentChar == '+' || Char.IsLetter(currentChar));
 
                 string val = GetBufferValue(0);
-                return new Token(TokenType.Number, val, GetTokenText(), 0, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+                return new Token(TokenType.Number, val, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
             }
             else
             {
                 string val = GetBufferValue(0);
                 decimal decimalVal;
-                if (decimal.TryParse(val, out decimalVal))
+                long intVal;
+                if (long.TryParse(val, out intVal))
                 {
-                    return new Token(TokenType.Decimal, decimalVal, GetTokenText(), 0, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+                    return new Token(TokenType.Integer, intVal, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
+                }
+                else if (decimal.TryParse(val, out decimalVal))
+                {
+                    return new Token(TokenType.Decimal, decimalVal, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
                 }
                 else
                 {
-                    return new Token(TokenType.Number, val, GetTokenText(), 0, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+                    return new Token(TokenType.Number, val, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
                 }
             }
         }
@@ -694,7 +699,7 @@ namespace System.Text
         private Token GetPrefixedIdentifierToken()
         {
             ReadNext();
-            bufBeg = textPos;
+            _bufBeg = _textPos;
 
             char currentChar = PeekChar();
             if (Char.IsLetterOrDigit(currentChar) || currentChar == '_' || IsIdentChar(currentChar))
@@ -709,21 +714,21 @@ namespace System.Text
             }
 
             string val = GetBufferValue(0);
-            if ((settings.Options & LexerOptions.IdentToUpper) != 0)
+            if ((_settings.Options & LexerOptions.IdentToUpper) != 0)
             {
-                val = val.ToUpper(settings.CultureInfo);
+                val = val.ToUpper(_settings.CultureInfo);
             }
-            else if ((settings.Options & LexerOptions.IdentToLower) != 0)
+            else if ((_settings.Options & LexerOptions.IdentToLower) != 0)
             {
-                val = val.ToLower(settings.CultureInfo);
+                val = val.ToLower(_settings.CultureInfo);
             }
 
-            return new Token(TokenType.Identifier, val, GetTokenText(), 0, start, position, lineBegin, lineNumber, lineBegin, lineNumber);
+            return new Token(TokenType.Identifier, val, GetTokenText(), 0, _start, _position, _lineBegin, _lineNumber, _lineBegin, _lineNumber);
         }
 
         private bool IsIdentChar(char currentChar)
         {
-            char[] identChars = settings.IdentChars;
+            char[] identChars = _settings.IdentChars;
             if (identChars != null)
             {
                 int len = identChars.Length;
@@ -742,17 +747,17 @@ namespace System.Text
 
         private char PeekChar()
         {
-            if (textPos < textLen)
+            if (_textPos < _textLen)
             {
-                return text[textPos];
+                return _text[_textPos];
             }
 
-            if (textLen == BufferCapacity)
+            if (_textLen == BufferCapacity)
             {
                 ReadCharBuffer();
-                if (textPos < textLen)
+                if (_textPos < _textLen)
                 {
-                    return text[textPos];
+                    return _text[_textPos];
                 }
             }
 
@@ -761,19 +766,19 @@ namespace System.Text
 
         private char PeekChar(int ofs)
         {
-            int i = textPos + ofs;
-            if (i < textLen)
+            int i = _textPos + ofs;
+            if (i < _textLen)
             {
-                return text[i];
+                return _text[i];
             }
 
-            if (textLen == BufferCapacity)
+            if (_textLen == BufferCapacity)
             {
                 ReadCharBuffer();
-                ofs += textPos;
-                if (ofs < textLen)
+                ofs += _textPos;
+                if (ofs < _textLen)
                 {
-                    return text[ofs];
+                    return _text[ofs];
                 }
             }
 
@@ -782,42 +787,42 @@ namespace System.Text
 
         private string PeekSubstring(int count)
         {
-            if (textPos + count <= textLen)
+            if (_textPos + count <= _textLen)
             {
-                return text.Substring(textPos, count);
+                return _text.Substring(_textPos, count);
             }
 
-            if (textLen == BufferCapacity)
+            if (_textLen == BufferCapacity)
             {
                 ReadCharBuffer();
             }
 
-            int i = textLen - textPos;
+            int i = _textLen - _textPos;
             if (count <= i)
             {
-                return text.Substring(textPos, count);
+                return _text.Substring(_textPos, count);
             }
             else
             {
-                return text.Substring(textPos, i);
+                return _text.Substring(_textPos, i);
             }
         }
 
         private char NextChar()
         {
-            if (textPos < textLen)
+            if (_textPos < _textLen)
             {
-                position++;
-                return text[textPos++];
+                _position++;
+                return _text[_textPos++];
             }
 
-            if (textLen == BufferCapacity)
+            if (_textLen == BufferCapacity)
             {
                 ReadCharBuffer();
-                if (textPos < textLen)
+                if (_textPos < _textLen)
                 {
-                    position++;
-                    return text[textPos++];
+                    _position++;
+                    return _text[_textPos++];
                 }
             }
 
@@ -826,18 +831,18 @@ namespace System.Text
 
         private void ReadNext()
         {
-            if (textPos < textLen)
+            if (_textPos < _textLen)
             {
-                position++;
-                textPos++;
+                _position++;
+                _textPos++;
             }
             else
             {
-                if (textLen == BufferCapacity)
+                if (_textLen == BufferCapacity)
                 {
                     ReadCharBuffer();
-                    position++;
-                    textPos++;
+                    _position++;
+                    _textPos++;
                 }
             }
         }
@@ -845,20 +850,20 @@ namespace System.Text
         private bool NextSymbolIs(string s)
         {
             int ln = s.Length;
-            if (textLen - textPos < ln && textLen == BufferCapacity)
+            if (_textLen - _textPos < ln && _textLen == BufferCapacity)
             {
                 ReadCharBuffer();
             }
 
-            if (textLen - textPos < ln || text[textPos] != s[0])
+            if (_textLen - _textPos < ln || _text[_textPos] != s[0])
             {
                 return false;
             }
 
-            if (settings.CompareInfo.Compare(text, textPos, ln, s, 0, ln, CompareOptions.None) == 0)
+            if (_settings.CompareInfo.Compare(_text, _textPos, ln, s, 0, ln, CompareOptions.None) == 0)
             {
-                position += ln;
-                textPos += ln;
+                _position += ln;
+                _textPos += ln;
                 return true;
             }
 
@@ -868,51 +873,51 @@ namespace System.Text
         private bool SymbolIs(string s)
         {
             int ln = s.Length;
-            if (textLen - textPos < ln && textLen == BufferCapacity)
+            if (_textLen - _textPos < ln && _textLen == BufferCapacity)
             {
                 ReadCharBuffer();
             }
 
-            if (textLen - textPos < ln || text[textPos] != s[0])
+            if (_textLen - _textPos < ln || _text[_textPos] != s[0])
             {
                 return false;
             }
 
-            return (settings.CompareInfo.Compare(text, textPos, ln, s, 0, ln, CompareOptions.None) == 0);
+            return (_settings.CompareInfo.Compare(_text, _textPos, ln, s, 0, ln, CompareOptions.None) == 0);
         }
 
         private void Skip(int ofs)
         {
-            if (textLen - textPos < ofs && textLen == BufferCapacity)
+            if (_textLen - _textPos < ofs && _textLen == BufferCapacity)
             {
                 ReadCharBuffer();
             }
 
-            int i = Math.Min(textLen - textPos, ofs);
-            position += i;
-            textPos += i;
+            int i = Math.Min(_textLen - _textPos, ofs);
+            _position += i;
+            _textPos += i;
         }
 
         private bool EndOfLine(char currentChar)
         {
             if (currentChar == '\r')
             {
-                endLineNumber++;
-                endLineBegin = position;
+                _endLineNumber++;
+                _endLineBegin = _position;
                 currentChar = PeekChar();
                 if (currentChar == '\n')
                 {
                     ReadNext();
                     BufferAdd(currentChar);
-                    endLineBegin = position;
+                    _endLineBegin = _position;
                 }
 
                 return true;
             }
             else if (currentChar == '\n')
             {
-                endLineNumber++;
-                endLineBegin = position;
+                _endLineNumber++;
+                _endLineBegin = _position;
 
                 return true;
             }
@@ -922,15 +927,15 @@ namespace System.Text
 
         private bool EndOfText()
         {
-            if (textPos < textLen)
+            if (_textPos < _textLen)
             {
                 return false;
             }
 
-            if (textLen == BufferCapacity)
+            if (_textLen == BufferCapacity)
             {
                 ReadCharBuffer();
-                return textPos >= textLen;
+                return _textPos >= _textLen;
             }
 
             return true;
@@ -938,107 +943,107 @@ namespace System.Text
 
         private void BufferAdd(char currentChar)
         {
-            if (buffer != null)
+            if (_buffer != null)
             {
-                buffer.Append(currentChar);
+                _buffer.Append(currentChar);
             }
-            else if (bufBeg >= 0 && textPos >= textLen)
+            else if (_bufBeg >= 0 && _textPos >= _textLen)
             {
-                buffer = new StringBuilder(text, bufBeg, textPos - bufBeg, BufferCapacity);
+                _buffer = new StringBuilder(_text, _bufBeg, _textPos - _bufBeg, BufferCapacity);
             }
         }
 
         private void BufferAdd(string str)
         {
-            if (buffer != null)
+            if (_buffer != null)
             {
-                buffer.Append(str);
+                _buffer.Append(str);
             }
-            else if (bufBeg >= 0 && textPos >= textLen)
+            else if (_bufBeg >= 0 && _textPos >= _textLen)
             {
-                buffer = new StringBuilder(text, bufBeg, textPos - bufBeg, BufferCapacity);
+                _buffer = new StringBuilder(_text, _bufBeg, _textPos - _bufBeg, BufferCapacity);
             }
         }
 
         private void EnsureBuffer(int ofs)
         {
-            if (buffer == null)
+            if (_buffer == null)
             {
-                buffer = new StringBuilder(text, bufBeg, textPos - bufBeg - ofs, BufferCapacity);
+                _buffer = new StringBuilder(_text, _bufBeg, _textPos - _bufBeg - ofs, BufferCapacity);
             }
             else
             {
-                buffer.Remove(buffer.Length - ofs, ofs);
+                _buffer.Remove(_buffer.Length - ofs, ofs);
             }
         }
 
         private string GetBufferValue(int ofs)
         {
-            if (buffer != null)
+            if (_buffer != null)
             {
-                return buffer.ToString(0, buffer.Length + ofs);
+                return _buffer.ToString(0, _buffer.Length + ofs);
             }
             else
             {
-                return text.Substring(bufBeg, textPos - bufBeg + ofs);
+                return _text.Substring(_bufBeg, _textPos - _bufBeg + ofs);
             }
         }
 
         private void ReadCharBuffer()
         {
-            if (reader == null)
+            if (_reader == null)
             {
                 return;
             }
 
-            if (tokenBuffer != null)
+            if (_tokenBuffer != null)
             {
-                tokenBuffer.Append(text, 0, textPos);
+                _tokenBuffer.Append(_text, 0, _textPos);
             }
-            else if (textBeg < textPos && (behavior & LexerBehavior.PersistTokenText) != 0)
+            else if (_textBeg < _textPos && (_behavior & LexerBehavior.PersistTokenText) != 0)
             {
-                tokenBuffer = new StringBuilder(text, textBeg, textPos - textBeg, BufferCapacity);
+                _tokenBuffer = new StringBuilder(_text, _textBeg, _textPos - _textBeg, BufferCapacity);
             }
             else
             {
-                textBeg = 0;
+                _textBeg = 0;
             }
 
             char[] charBuffer = new char[BufferCapacity];
-            if (textPos < textLen)
+            if (_textPos < _textLen)
             {
-                if (textPos == 0)
+                if (_textPos == 0)
                 {
                     throw new ArgumentException("'BufferCapacity' too small.");
                 }
-                textLen -= textPos;
-                text.CopyTo(textPos, charBuffer, 0, textLen);
+                _textLen -= _textPos;
+                _text.CopyTo(_textPos, charBuffer, 0, _textLen);
             }
             else
             {
-                textLen = 0;
+                _textLen = 0;
             }
 
-            textLen += reader.Read(charBuffer, textLen, BufferCapacity - textLen);
-            text = new string(charBuffer, 0, textLen);
-            textPos = 0;
+            _textLen += _reader.Read(charBuffer, _textLen, BufferCapacity - _textLen);
+            _text = new string(charBuffer, 0, _textLen);
+            _textPos = 0;
         }
 
         private string GetTokenText()
         {
-            if (tokenBuffer != null)
+            if (_tokenBuffer != null)
             {
-                tokenBuffer.Append(text, 0, textPos);
-                return tokenBuffer.ToString(0, tokenBuffer.Length);
+                _tokenBuffer.Append(_text, 0, _textPos);
+                return _tokenBuffer.ToString(0, _tokenBuffer.Length);
             }
 
-            if ((behavior & LexerBehavior.PersistTokenText) == 0)
+            if ((_behavior & LexerBehavior.PersistTokenText) == 0)
             {
                 return null;
             }
             else
             {
-                return text.Substring(textBeg, textPos - textBeg);
+                return _text.Substring(_textBeg, _textPos - _textBeg);
             }
         }
 
@@ -1068,7 +1073,7 @@ namespace System.Text
         {
             get
             {
-                return current;
+                return _current;
             }
         }
 
@@ -1083,9 +1088,9 @@ namespace System.Text
 
         public void Dispose()
         {
-            if (reader != null)
+            if (_reader != null)
             {
-                reader.Dispose();
+                _reader.Dispose();
             }
         }
 
@@ -1098,6 +1103,7 @@ namespace System.Text
         Symbol,
         Number,
         Decimal,
+        Integer,
         Identifier,
         Keyword,
         QuotedString,
@@ -1175,23 +1181,23 @@ namespace System.Text
 
     public sealed class LexerSettings : ICloneable
     {
-        public LexerOptions Options;
-        public IDictionary<string, int> Symbols;
-        public IDictionary<string, int> Keywords;
-        public CultureInfo CultureInfo;
-        public CompareInfo CompareInfo;
-        public char[] StringQuotes;
-        public char StringEscapeChar;
-        public char StringPrefix;
-        public char IdentQuote;
-        public char IdentQuoteBegin;
-        public char IdentQuoteEnd;
-        public char IdentPrefix;
-        public char[] IdentChars;
-        public string[] InlineComments;
-        public string CommentBegin;
-        public string CommentEnd;
-        public string DecimalSeparator;
+        public LexerOptions Options { get; set; }
+        public IDictionary<string, int> Symbols { get; set; }
+        public IDictionary<string, int> Keywords { get; set; }
+        public CultureInfo CultureInfo { get; set; }
+        public CompareInfo CompareInfo { get; set; }
+        public char[] StringQuotes { get; set; }
+        public char StringEscapeChar { get; set; }
+        public char StringPrefix { get; set; }
+        public char IdentQuote { get; set; }
+        public char IdentQuoteBegin { get; set; }
+        public char IdentQuoteEnd { get; set; }
+        public char IdentPrefix { get; set; }
+        public char[] IdentChars { get; set; }
+        public string[] InlineComments { get; set; }
+        public string CommentBegin { get; set; }
+        public string CommentEnd { get; set; }
+        public string DecimalSeparator { get; set; }
 
         public static LexerSettings Default
         {
@@ -1203,9 +1209,14 @@ namespace System.Text
                 settings.DecimalSeparator = ".";
                 settings.Options = LexerOptions.IdentIgnoreCase | LexerOptions.StringDoubleQuote;
                 settings.StringQuotes = new char[] { '\"', '\'' };
-                settings.InlineComments = new string[] { "--" };
+                settings.InlineComments = new string[] { "//" };
                 settings.CommentBegin = "/*";
                 settings.CommentEnd = "*/";
+                settings.StringEscapeChar = '\\';
+                settings.StringPrefix = '@';
+                settings.IdentQuote = '\0';
+                settings.IdentQuoteBegin = '\0';
+                settings.IdentQuoteEnd = '\0';
 
                 return settings;
             }
@@ -1307,5 +1318,11 @@ namespace System.Text
         }
 
         #endregion
+    }
+
+    internal static class CommonLexem
+    {
+        public const int Start = 1;
+        public const int End = 2;
     }
 }
